@@ -14,13 +14,15 @@
 
 // create instance of p5
 new p5();
+var increment_size;
+const TRANSPERENCY = 50;
 // const Jimp = require('jimp');
 const COLOR_BLACK = color(0, 0, 0);
 //map generation colors
 const COLOR_ROAD = color(246, 246, 234);
 const COLOR_GRASS = color(194, 221, 168);
 const COLOR_BUILDING = color(255, 212,86);
-const COLOR_LETTER = color(107, 92, 113);
+const COLOR_LETTER = color(107, 92, 113 );
 // const COLOR_LETTER = color()
 //li
 const PIXEL_VALUE_LINIENCY = 5;
@@ -28,12 +30,16 @@ const LETTER_PIXEL_VALUE_LINIENCY = 75;
 
 const COLOR_GRAY = color(242, 242, 242);
 const COLOR_WHITE = color(255, 255, 255);
-const COLOR_BLUE = color(135, 206, 235);
+//grid outline
+const COLOR_BLUE = color(135, 206, 235, 100);
+//selectio color
+const COLOR_RED_SELECTION = color(0, 0, 100, TRANSPERENCY);
+
 const COLOR_PURPLE = color(0, 91, 156);
-const CANVAS_HEIGHT = 640;
-const CANVAS_WIDTH = 640;
+const CANVAS_HEIGHT = 800;
+const CANVAS_WIDTH = 800;
 // const CHUNCK_SIZE = 2;
-const cell_size = 2;
+const cell_size = 16;
 // var chuncks = new Array();
 var map_grid;
 var draw_grid = false;
@@ -49,7 +55,7 @@ function preload() {
     test_map_image = loadImage('../assets/test-map.png');
 
     // test_map_image
-    console.log(test_map_image);
+    // console.log(test_map_image);
 }
 
 // console.log(test_map_image["height"]["height"]);
@@ -228,12 +234,12 @@ function drawGrid(grid)
     {
         for(var x=0; x < grid[y].length; x++)
         {
-            if (!grid[x][y].get_visited) {
-                fill(COLOR_BLACK);
-            }
-            else {
-                fill(COLOR_PURPLE);
-            }
+            // if (!grid[x][y].get_visited) {
+            //     fill(COLOR_BLACK);
+            // }
+            // else {
+            //     fill(COLOR_PURPLE);
+            // }
 
 
             if (grid[x][y].get_type != null) {
@@ -252,13 +258,33 @@ function drawGrid(grid)
 }
 }
 
+function drawSelectionOverlayGrid() {
+    for(var y=0; y < grid.length; y++)
+    {
+        for(var x=0; x < grid[y].length; x++)
+        {
+            if (grid[x][y].get_visited) {
+                fill(COLOR_RED_SELECTION);
+                square(grid[x][y].get_x_position, grid[x][y].get_y_position, grid[x][y].get_size);
+            }
+            // else {
+            //     fill(COLOR_PURPLE);
+            // }
+
+
+
+        }
+    }
+
+}
+
 
 function mousePressed() {
     // processImage();
     // randomPixels();
-
-    var x_selected = Math.floor ( mouseX / cell_size );
-    var y_selected = Math.floor ( mouseY / cell_size );
+    // console.log(increment_size);
+    var x_selected = Math.floor ( mouseX / increment_size );
+    var y_selected = Math.floor ( mouseY / increment_size );
 
     if ( ( x_selected >= 0 && x_selected < grid[0].length ) && ( y_selected >= 0 && y_selected < grid.length ) )
     {
@@ -296,12 +322,15 @@ function compareRGBColor(pixel_liniency, preset_r, preset_g, preset_b, current_r
 
 function draw() {
     // processImage();
-    background(51);
+    // background(COLOR_BLACK);
     stroke(COLOR_WHITE);
     // background(51);
     if (draw_grid) {
 
         drawGrid(grid);
+        drawSelectionOverlayGrid();
+
     }
+    // selectionOverlayGrid();
     // randomPixels();
 }
