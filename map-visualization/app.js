@@ -1,14 +1,34 @@
+// Jimp.read('../assets/test-map.png')
+// .then(image => {
+//     // console.log('read image successfully');
+//     // console.log(image);
+//     console.log(Jimp.intToRGBA(image.getPixelColor(32,32))["r"]);
+//     // image.greyscale()
+//     //     .write('cropped-test.png');
+//     // // Do stuff with the image.
+// })
+// .catch(err => {
+//     console.log('broken');
+//     // Handle an exception.
+// });
+
 // create instance of p5
 new p5();
 // const Jimp = require('jimp');
 const COLOR_BLACK = color(0, 0, 0);
+//map generation colors
+const COLOR_ROAD = color(246, 246, 234);
+const COLOR_GRASS = color(194, 221, 168);
+const COLOR_BUILDING = color(255, 212,86)
+
 const COLOR_GRAY = color(242, 242, 242);
 const COLOR_WHITE = color(255, 255, 255);
 const COLOR_BLUE = color(135, 206, 235);
 const COLOR_PURPLE = color(0, 91, 156);
 const CANVAS_HEIGHT = 640;
 const CANVAS_WIDTH = 640;
-const cell_size = 32;
+const CHUNCK_SIZE = 2;
+const cell_size = 4;
 
 var map_grid;
 function setup() {
@@ -24,7 +44,7 @@ function preload() {
 function createGrid()
 {
     // initialize grid
-    var length = CANVAS_WIDTH / 32;
+    var length = CANVAS_WIDTH / cell_size;
     var grid = new Array(length);
 
     for(var i=0; i < grid.length; i++)
@@ -49,11 +69,22 @@ function drawGrid(grid)
     {
         for(var x=0; x < grid[y].length; x++)
         {
-            if (grid[x][y].get_visited) {
-                fill(COLOR_PURPLE);
+            if (!grid[x][y].get_visited) {
+                fill(COLOR_BLACK);
             }
             else {
-                fill(COLOR_GRAY);
+                fill(COLOR_PURPLE);
+            }
+
+
+            if (grid[x][y].get_type != null) {
+                if ( grid[x][y].get_type == "road" ) {
+                    fill(COLOR_ROAD);
+                } else if(grid[x][y].get_type == "grass") {
+                    fill(COLOR_GRASS);
+                } else if(grid[x][y].get_type == "building") {
+                    fill(COLOR_BUILDING);
+                }
             }
             square(grid[x][y].get_x_position, grid[x][y].get_y_position, grid[x][y].get_size);
         }
@@ -76,56 +107,126 @@ function mousePressed() {
 }
 
 function processImage() {
-    // loadPixels();
-    // console.log(pixels);
-    var length = 320 / 32;
-    map_grid = new Array(length);
+    // var color_grid;
 
-    for(var i=0; i < map_grid.length; i++)
-    {
-        map_grid[i] = new Array(length);
-    }
+    Jimp.read('../assets/test-map.png')
+    .then(image => {
+        // console.log('read image successfully');
+        var map_height  = image["bitmap"]["height"];
+        var map_width  = image["bitmap"]["width"];
+        var horizontal_chuncks = Math.floor(map_width / cell_size);
+        console.log(horizontal_chuncks);
+        var vertical_chuncks = Math.floor(map_height / cell_size);
+        console.log('h: %d w: %d',map_height, map_width);
 
-    for(var y=0; y < test_map_image.length; y++)
-    {
-        for(var x=0; x < test_map_image[0].length; x++)
+        var color_grid = new Array(vertical_chuncks);
+
+        for(var i=0; i < grid.length; i++)
         {
-            // map_grid[x][y] = test_map_image.get(increment*x, increment*y, cell_size);
-            console.log(test_map_image[x][y]);
-
+            color_grid[i] = new Array(horizontal_chuncks);
         }
-    }
-
-    console.log(map_grid);
 
 
+
+        for(var y=0; y < vertical_chuncks; y++)
+        {
+            for(var x=0; x < horizontal_chuncks; x++)
+            {
+                var chunk_x_start_position = x * cell_size;
+                var chunk_y_start_position = y * cell_size;
+                var chunk_x_end_position = chunk_x_start_position + cell_size;
+                var chunk_y_end_position = chunk_y_start_position + cell_size;
+
+                for(var _y=chunk_y_start_position; _y < chunk_y_end_position; _y++)
+                {
+                    //process each chunk
+                    var pixel_array = new Array();
+                    for(var _x=chunk_x_start_position; _x < chunk_x_end_position; _x++)
+                    {
+                        // pixel_array.push()
+                        // console.log(Jimp.intToRGBA(image.getPixelColor(_x,_y))["r"]);
+                        pixel_array.push( color(Jimp.intToRGBA(image.getPixelColor(_x,_y))["r"], Jimp.intToRGBA(image.getPixelColor(_x,_y))["g"], Jimp.intToRGBA(image.getPixelColor(_x,_y))["b"] ) );
+                    }
+                }
+
+                var road_pixel_count = 0;
+                var building_pixel_count = 0;
+                var grass_pixel_count = 0;
+
+                // console.log(pixel_array[10]["levels"][0]);
+                for(i=0; i < pixel_array.length; i++)
+                {
+                    if(pixel_array[i]["levels"][0] == COLOR_ROAD["levels"][0] && pixel_array[i]["levels"][1] == COLOR_ROAD["levels"][1] && pixel_array[i]["levels"][2] == COLOR_ROAD["levels"][2]) {
+                        road_pixel_count++;
+                    } else if(pixel_array[i]["levels"][0] == COLOR_GRASS["levels"][0] && pixel_array[i]["levels"][1] == COLOR_GRASS["levels"][1]  && pixel_array[i]["levels"][2] == COLOR_GRASS["levels"][2] ) {
+                        grass_pixel_count++;
+                    } else {
+                        building_pixel_count++;
+                    }
+
+                }
+
+                console.log('road: %d grass: %d building %d', road_pixel_count, grass_pixel_count, building_pixel_count);
+                // assign prominent structure color
+                if(road_pixel_count > building_pixel_count && road_pixel_count > grass_pixel_count) {
+                    color_grid[x][y] = COLOR_ROAD;
+                } else if(grass_pixel_count > road_pixel_count && grass_pixel_count > building_pixel_count) {
+                    color_grid[x][y] = COLOR_GRASS;
+                } else if ( building_pixel_count > road_pixel_count && building_pixel_count > grass_pixel_count ) {
+                    color_grid[x][y]  = COLOR_BUILDING;
+                } else {
+                    color_grid[x][y]  = COLOR_BLUE;
+                }
+
+                //process each chunk
+                // var pixel_array = new Array();
+            }
+        }
+
+        // return color_grid;
+        // console.log(color_grid.length);
+        // console.log(color_grid[0].length);
+        // update grid
+        for(var y=0; y < color_grid.length; y++)
+        {
+            for(var x=0; x < color_grid[y].length; x++)
+            {
+                if(color_grid[x][y] == COLOR_ROAD) {
+                    grid[x][y].set_type  = "road";
+                } else if(color_grid[x][y] == COLOR_GRASS) {
+                    grid[x][y].set_type  = "grass";
+                } else if(color_grid[x][y] == COLOR_BUILDING) {
+                    grid[x][y].set_type  = "building";
+                }
+            }
+        }
+        console.log(grid.length);
+
+        // console.log(Jimp.intToRGBA(image.getPixelColor(32,32))["r"]);
+        // image.greyscale()
+        //     .write('cropped-test.png');
+        // // Do stuff with the image.
+    })
+    .catch(err => {
+        console.log('broken');
+        // Handle an exception.
+    });
+
+    // return color_grid;
 }
 
 
 const grid = createGrid();
 // const map = processImage();
 
-function randomPixels() {
-    loadPixels();
-    // var horizontal_pixel_sections = CANVAS_WIDTH / 4;
-    // var vertical_pixel_sections = CANVAS_HEIGHT / 4;
-    // console.log(width);
-
-    var pink = color(255, 102, 204);
-    pixel_density = pixelDensity();
-    var total_pixels = 4 * (CANVAS_WIDTH * pixel_density) * (CANVAS_HEIGHT * pixel_density);
-
-    for( var i=0; i<total_pixels; i++)
-    {
-        pixels[i] = red(pink);
-        pixels[i + 1] = green(pink);
-        pixels[i + 2] = blue(pink);
-        pixels[i + 3] = alpha(pink);
-
+function keyPressed() {
+    if( keyCode === ENTER ) {
+        processImage();
+        console.log(COLOR_BLUE["levels"]);
     }
-    updatePixels();
 }
 function draw() {
+    // processImage();
     background(51);
     stroke(COLOR_BLUE);
     // background(51);
