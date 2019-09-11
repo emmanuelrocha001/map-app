@@ -7,8 +7,8 @@ var increment_size;
 /*----------------------------------------------------------*/
 var CANVAS_HEIGHT = 800;
 var CANVAS_WIDTH = 800;
-// var CANVAS_HEIGHT = 2000;
-// var CANVAS_WIDTH = 2000;
+// var CANVAS_HEIGHT = 1000;
+// var CANVAS_WIDTH = 1000;
 
 
 const GRID_PROCESSING_VALUE = 2;
@@ -291,10 +291,22 @@ function drawGrid( current_grid )
                             fill( COLOR_LETTER );
                         }
 
+                        //draw cell
+                        square(view_matrix_increment_value*x, view_matrix_increment_value*y, view_matrix_increment_value);
+
+                        // draw selection square
+                        if ( grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_visited ) {
+                            fill( SELECTION_COLOR );
+                            square(view_matrix_increment_value*x, view_matrix_increment_value*y, view_matrix_increment_value);
+                        }
+
                     }
 
-                    //draw cell
-                    square(view_matrix_increment_value*x, view_matrix_increment_value*y, view_matrix_increment_value);
+                    //draw selection square
+                    // if ( grid[x][y].get_visited ) {
+                    //     fill( SELECTION_COLOR );
+                    //     square(view_matrix_increment_value*x, view_matrix_increment_value*y, view_matrix_increment_value);
+                    // }
                 }
 
             }
@@ -315,6 +327,26 @@ function mousePressed() {
     var x_selected = Math.floor ( mouseX / view_matrix_increment_value ) + view_index_offset_x;
     var y_selected = Math.floor ( mouseY / view_matrix_increment_value ) + view_index_offset_y;
     console.log('x: %d y: %d', x_selected, y_selected);
+
+ // check if position selected is a valid grid position
+ if( ( ( x_selected >= 0 ) && ( x_selected <= grid[0].length-1 ) ) && ( ( y_selected >=0 )  && ( y_selected <= grid.length - 1 ) ) ) {
+        // check if selection is bounds of view matrix
+        // if( ( ( x_selected >= 0 ) && ( x_selected <= view_matrix[0].length-1 ) ) && ( ( y_selected >=0 )  && ( y_selected <= view_matrix.length - 1 ) ) ) {
+            // check if cell is not null
+
+            // deal with out of view selection when updated screen based on screen
+            if ( grid[ x_selected ][ y_selected ] != null ) {
+                updateQueue.push( [ x_selected, y_selected ] );
+                console.log(updateQueue);
+            } else {
+                console.log( 'cell is not defined' );
+            }
+        // }
+
+    } else {
+        console.log( 'selection is out of bounds');
+    }
+
 
 }
 
@@ -383,6 +415,19 @@ function keyPressed() {
 
 }
 
+function update_selection_cells() {
+    var cell_size = Math.floor( CANVAS_WIDTH / view_matrix.length )
+    while ( updateQueue.length > 0 ) {
+        console.log( 'cell updated');
+        // console.log( updateQueue.shift() );
+        cell_position = updateQueue.shift();
+        // square( cell_position[0]*cell_size, cell_position[1]*cell_size, cell_size );
+        grid[ cell_position[0] ][ cell_position[1] ].set_visited = !( grid[ cell_position[0] ][ cell_position[1] ].get_visited );
+    }
+    // update changes at end
+    draw_grid = true;
+}
+
 function draw() {
     stroke( COLOR_BLUE );
 
@@ -392,5 +437,10 @@ function draw() {
         draw_grid = false;
         console.log('drawing map');
     }
+
+    if ( updateQueue.length != 0 ) {
+        update_selection_cells();
+    }
+
 
 }
