@@ -1,7 +1,11 @@
 <!doctype html>
 
 <html lang="en">
+  <style>
+    body {text-align:center}
+  </style>
 <head>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/p5.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.8.0/addons/p5.dom.min.js"></script>
   <meta charset="utf-8">
@@ -14,8 +18,18 @@
 
 <body>
     <h1>Map route visualization</h1>
-    <h3>press [ENTER] to process map image</h3>
+    <div class="slidecontainer">
+      <input type="range" min="1" max="10" value="1" step= "1" class="slider" id="myRange">
+    </div>
+  <script>
+//   document.getElementsByClassName("slider")[0].addEventListener("change", function() {
+//     console.log("valued changed");
+// }, false);
 
+  </script>
+  <script src='../node_modules/jquery/dist/jquery.js'></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
   <script src='../node_modules/jimp/browser/lib/jimp.js'></script>
   <script src="../require.js" data-main="../config"></script>
    <!-- <script> require(["main"]);</script> -->
