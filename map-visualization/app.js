@@ -24,9 +24,14 @@ const COLOR_WHITE = color(255, 255, 255);
 const COLOR_BLUE = color(135, 206, 235, 100);
 
 //selection square info
-const TRANSPERENCY = 50;
-const SELECTION_COLOR = color(0, 0, 100, TRANSPERENCY);
+const TRANSPERENCY = 255;
+const SELECTION_COLOR = color(0, 0, 100, 50);
+const SELECTION_COLOR_START = color(0, 100, 0, TRANSPERENCY);
+const SELECTION_COLOR_END = color( 100, 0, 0, TRANSPERENCY);
 
+var selection_modes = ['select_start_node', 'select_end_node', 'select_normal_node'];
+var node_types = [ 'start', 'end', 'normal' ];
+var current_selection_index = 0;
 
 // map generation variables
 /*----------------------------------------------------------*/
@@ -67,6 +72,9 @@ $(document).ready( () => {
         map_width  = image["bitmap"]["width"];
         createGrid();
         createViewMatrix();
+        document.getElementById( 'selection_mode' ).innerHTML = selection_modes[ current_selection_index ];
+
+        // display current
     })
     .then( result => {
         // console.log(result);
@@ -293,12 +301,25 @@ function drawGrid( current_grid )
 
                         //draw cell
                         square(view_matrix_increment_value*x, view_matrix_increment_value*y, view_matrix_increment_value);
+                        var current_node_type = grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_node_type;
 
                         // draw selection square
-                        if ( grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_visited ) {
-                            fill( SELECTION_COLOR );
+                        if ( current_node_type != null ) {
+                            if ( current_node_type == 'normal' ) {
+                                fill( SELECTION_COLOR );
+                            } else if ( current_node_type == 'start' ) {
+                                fill( SELECTION_COLOR_START );
+                            } else if( current_node_type == 'end' ) {
+                                fill( SELECTION_COLOR_END );
+                            }
                             square(view_matrix_increment_value*x, view_matrix_increment_value*y, view_matrix_increment_value);
                         }
+
+                        //  // draw selection square
+                        //  if ( grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_visited ) {
+                        //     fill( SELECTION_COLOR );
+                        //     square(view_matrix_increment_value*x, view_matrix_increment_value*y, view_matrix_increment_value);
+                        // }
 
                     }
 
@@ -356,6 +377,8 @@ function keyPressed() {
         console.log( view_matrix );
     }
 
+    // view matrix control
+    //----------------------------------------------------------------------------------------------------------------
     // move -Y direction
     if ( keyCode ===  87 ) {
         // console.log('pressed w');
@@ -412,6 +435,33 @@ function keyPressed() {
         // console.log( view_index_offset_x );
     }
 
+    // selection mode control
+    //----------------------------------------------------------------------------------------------------------------
+    // up arrow
+    if ( keyCode === 38 ) {
+        // check array upper bounds,
+        if ( ( current_selection_index + 1) <= ( selection_modes.length - 1 ) ) {
+            current_selection_index += 1;
+        } else {
+            current_selection_index = 0;
+        }
+        console.log( current_selection_index );
+        document.getElementById( 'selection_mode' ).innerHTML = selection_modes[ current_selection_index ];
+    }
+
+    // down arrow
+    if ( keyCode === 40 ) {
+        if ( ( current_selection_index - 1) >=  0 ) {
+            current_selection_index -= 1;
+        } else {
+            current_selection_index = selection_modes.length - 1;
+        }
+        console.log( current_selection_index );
+        document.getElementById( 'selection_mode' ).innerHTML = selection_modes[ current_selection_index ];
+
+    }
+
+
 
 }
 
@@ -422,7 +472,8 @@ function update_selection_cells() {
         // console.log( updateQueue.shift() );
         cell_position = updateQueue.shift();
         // square( cell_position[0]*cell_size, cell_position[1]*cell_size, cell_size );
-        grid[ cell_position[0] ][ cell_position[1] ].set_visited = !( grid[ cell_position[0] ][ cell_position[1] ].get_visited );
+        // grid[ cell_position[0] ][ cell_position[1] ].set_visited = !( grid[ cell_position[0] ][ cell_position[1] ].get_visited );
+        grid[ cell_position[0] ][ cell_position[1] ].set_node_type = node_types[ current_selection_index ];
     }
     // update changes at end
     draw_grid = true;

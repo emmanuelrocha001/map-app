@@ -7,6 +7,7 @@ class Cell {
         this._size = size;
         this._visited = false;
         this._type = null;
+        this._node_type = null;
     }
 
     get get_x_position() {
@@ -35,6 +36,14 @@ class Cell {
 
     set set_type(type) {
         this._type = type;
+    }
+
+    get get_node_type() {
+        return this._node_type;
+    }
+
+    set set_node_type( node_type) {
+        this._node_type = node_type;
     }
 
 
