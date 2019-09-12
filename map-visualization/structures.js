@@ -1,6 +1,6 @@
 // new p5();
 
-class Cell {
+class Node {
     constructor(x, y, size) {
         this._x_position = x;
         this._y_position = y;

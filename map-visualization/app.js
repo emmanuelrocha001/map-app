@@ -16,7 +16,7 @@ const GRID_PROCESSING_VALUE = 2;
 var grid;
 
 var draw_grid = true;
-
+GRID_SIZE = 20;
 // colors
 const COLOR_BLACK = color(0, 0, 0);
 const COLOR_GRAY = color(242, 242, 242);
@@ -24,19 +24,23 @@ const COLOR_WHITE = color(255, 255, 255);
 const COLOR_BLUE = color(135, 206, 235, 100);
 
 //selection square info
-const TRANSPERENCY = 255;
-const SELECTION_COLOR = color(0, 0, 100, 50);
-const SELECTION_COLOR_START = color(0, 100, 0, TRANSPERENCY);
-const SELECTION_COLOR_END = color( 100, 0, 0, TRANSPERENCY);
+const TRANSPERENCY = 100;
+const VISITED_NODE_COLOR = (0, 0, 255, TRANSPERENCY );
+const SELECTION_COLOR_WALL = color(0, 0, 0, TRANSPERENCY );
+const SELECTION_COLOR_START = color(0, 255, 0, TRANSPERENCY);
+const SELECTION_COLOR_END = color( 255, 0, 0, TRANSPERENCY);
 
-var selection_modes = ['select_start_node', 'select_end_node', 'select_normal_node'];
-var node_types = [ 'start', 'end', 'normal' ];
+const FASTEST_PATH_NODE_COLOR = color( 255, 255, TRANSPERENCY);
+
+var selection_modes = ['select_start_node', 'select_end_node', 'select_wall_node'];
+var node_types = [ 'start', 'end', 'wall' ];
 var current_selection_index = 0;
 
 
 // path finding variables
 var start_node = null;
 var end_node = null;
+
 
 // map generation variables
 /*----------------------------------------------------------*/
@@ -121,10 +125,12 @@ function preload() {
 
 function createGrid()
 {
-
+    // no image processing
     // calculate grid dimensions based on map dimensions and processing value
-    var vertical_length = Math.floor( map_height / GRID_PROCESSING_VALUE );
-    var horizontal_length = Math.floor( map_width / GRID_PROCESSING_VALUE);
+    // var vertical_length = Math.floor( map_height / GRID_PROCESSING_VALUE );
+    // var horizontal_length = Math.floor( map_width / GRID_PROCESSING_VALUE);
+    vertical_length = GRID_SIZE;
+    horizontal_length = GRID_SIZE;
 
     grid = new Array( vertical_length );
 
@@ -137,7 +143,7 @@ function createGrid()
     {
         for(var x=0; x < grid[y].length; x++)
         {
-            grid[x][y] = new Cell(GRID_PROCESSING_VALUE*x, GRID_PROCESSING_VALUE*y, GRID_PROCESSING_VALUE);
+            grid[x][y] = new Node(GRID_PROCESSING_VALUE*x, GRID_PROCESSING_VALUE*y, GRID_PROCESSING_VALUE);
         }
     }
 
@@ -220,7 +226,7 @@ function processImage() {
             }
         }
 
-        // set cell type based prominent pixel color
+        // set node type based prominent pixel color
         for(var y=0; y < color_grid.length; y++)
         {
             for(var x=0; x < color_grid[y].length; x++)
@@ -290,7 +296,7 @@ function drawGrid( current_grid )
 
                 if(current_grid[x][y] != null) {
 
-                    // check cell type
+                    // check node type
                     if ( grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ] != null )
                     {
 
@@ -304,7 +310,7 @@ function drawGrid( current_grid )
                         //     fill( COLOR_LETTER );
                         // }
 
-                        // //draw cell
+                        // //draw node
                         fill ( COLOR_WHITE )
                         square(view_matrix_increment_value*x, view_matrix_increment_value*y, view_matrix_increment_value);
 
@@ -312,8 +318,8 @@ function drawGrid( current_grid )
                         // draw selection square
                         var current_node_type = grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_node_type;
                         if ( current_node_type != null ) {
-                            if ( current_node_type == 'normal' ) {
-                                fill( SELECTION_COLOR );
+                            if ( current_node_type == 'wall' ) {
+                                fill( SELECTION_COLOR_WALL );
                             } else if ( current_node_type == 'start' ) {
                                 fill( SELECTION_COLOR_START );
                             } else if( current_node_type == 'end' ) {
@@ -362,14 +368,14 @@ function mousePressed() {
  if( ( ( x_selected >= 0 ) && ( x_selected <= grid[0].length-1 ) ) && ( ( y_selected >=0 )  && ( y_selected <= grid.length - 1 ) ) ) {
         // check if selection is bounds of view matrix
         // if( ( ( x_selected >= 0 ) && ( x_selected <= view_matrix[0].length-1 ) ) && ( ( y_selected >=0 )  && ( y_selected <= view_matrix.length - 1 ) ) ) {
-            // check if cell is not null
+            // check if node is not null
 
             // deal with out of view selection when updated screen based on screen
             if ( grid[ x_selected ][ y_selected ] != null ) {
                 updateQueue.push( [ x_selected, y_selected ] );
                 console.log(updateQueue);
             } else {
-                console.log( 'cell is not defined' );
+                console.log( 'node is not defined' );
             }
         // }
 
@@ -475,35 +481,38 @@ function mouseWheel(){
     return false;
 }
 
-function update_selection_cells() {
-    var cell_size = Math.floor( CANVAS_WIDTH / view_matrix.length )
+function update_selection_nodes() {
+    var node_size = Math.floor( CANVAS_WIDTH / view_matrix.length )
     while ( updateQueue.length > 0 ) {
-        console.log( 'cell updated');
+        console.log( 'node updated');
         // console.log( updateQueue.shift() );
-        cell_position = updateQueue.shift();
+        node_position = updateQueue.shift();
 
 
-        var current_selected_type = grid[ cell_position[0] ][ cell_position[1] ].get_node_type;
+        // selecting start node
+        var current_selected_type = grid[ node_position[0] ][ node_position[1] ].get_node_type;
         if ( selection_modes[ current_selection_index ] == 'select_start_node' ) {
             if ( start_node == null ) {
-                start_node = [ cell_position[0], cell_position[1] ];
+                start_node = [ node_position[0], node_position[1] ];
             } else {
                 grid[ start_node[0] ][ start_node[1] ].set_node_type = null;
-                start_node = [ cell_position[0], cell_position[1] ];
+                start_node = [ node_position[0], node_position[1] ];
             }
-            grid[ cell_position[0] ][ cell_position[1] ].set_node_type = node_types[ current_selection_index ];
-        }
+            grid[ node_position[0] ][ node_position[1] ].set_node_type = node_types[ current_selection_index ];
 
-        // selecting end node
-        if ( selection_modes[ current_selection_index ] == 'select_end_node' ) {
+        } else if ( selection_modes[ current_selection_index ] == 'select_end_node' ) {
             if ( end_node == null ) {
-                end_node = [ cell_position[0], cell_position[1] ];
+                end_node = [ node_position[0], node_position[1] ];
             } else {
                 grid[ end_node[0] ][ end_node[1] ].set_node_type = null;
-                end_node = [ cell_position[0], cell_position[1] ];
+                end_node = [ node_position[0], node_position[1] ];
             }
-            grid[ cell_position[0] ][ cell_position[1] ].set_node_type = node_types[ current_selection_index ];
+            grid[ node_position[0] ][ node_position[1] ].set_node_type = node_types[ current_selection_index ];
+        } else {
+            grid[ node_position[0] ][ node_position[1] ].set_node_type = node_types[ current_selection_index ];
         }
+
+
 
     }
     // update changes at end
@@ -521,7 +530,7 @@ function draw() {
     }
 
     if ( updateQueue.length != 0 ) {
-        update_selection_cells();
+        update_selection_nodes();
     }
 
 
