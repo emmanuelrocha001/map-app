@@ -33,6 +33,11 @@ var selection_modes = ['select_start_node', 'select_end_node', 'select_normal_no
 var node_types = [ 'start', 'end', 'normal' ];
 var current_selection_index = 0;
 
+
+// path finding variables
+var start_node = null;
+var end_node = null;
+
 // map generation variables
 /*----------------------------------------------------------*/
 // general colors
@@ -54,7 +59,7 @@ var map_width;
 var changing_view = false;
 var view_index_offset_x = 0;
 var view_index_offset_y = 0;
-const VIEW_STEP_VALUE = 10;
+const VIEW_STEP_VALUE = 5;
 // changes queue
 var updateQueue = new Array();
 // shifts removes first element and returns it
@@ -136,7 +141,7 @@ function createGrid()
         }
     }
 
-    processImage();
+    // processImage();
 }
 
 function processImage() {
@@ -289,21 +294,23 @@ function drawGrid( current_grid )
                     if ( grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ] != null )
                     {
 
-                        if ( grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_type == 'road') {
-                            fill( COLOR_ROAD );
-                        } else if ( grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_type == 'grass') {
-                            fill( COLOR_GRASS );
-                        } else if ( grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_type == 'building') {
-                            fill( COLOR_BUILDING );
-                        } else if ( grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_type == 'letter') {
-                            fill( COLOR_LETTER );
-                        }
+                        // if ( grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_type == 'road') {
+                        //     fill( COLOR_ROAD );
+                        // } else if ( grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_type == 'grass') {
+                        //     fill( COLOR_GRASS );
+                        // } else if ( grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_type == 'building') {
+                        //     fill( COLOR_BUILDING );
+                        // } else if ( grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_type == 'letter') {
+                        //     fill( COLOR_LETTER );
+                        // }
 
-                        //draw cell
+                        // //draw cell
+                        fill ( COLOR_WHITE )
                         square(view_matrix_increment_value*x, view_matrix_increment_value*y, view_matrix_increment_value);
-                        var current_node_type = grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_node_type;
+
 
                         // draw selection square
+                        var current_node_type = grid[ current_grid[x][y][0] + view_index_offset_x ][ current_grid[x][y][1] + view_index_offset_y ].get_node_type;
                         if ( current_node_type != null ) {
                             if ( current_node_type == 'normal' ) {
                                 fill( SELECTION_COLOR );
@@ -348,6 +355,8 @@ function mousePressed() {
     var x_selected = Math.floor ( mouseX / view_matrix_increment_value ) + view_index_offset_x;
     var y_selected = Math.floor ( mouseY / view_matrix_increment_value ) + view_index_offset_y;
     console.log('x: %d y: %d', x_selected, y_selected);
+    console.log('start_node');
+    console.log(start_node);
 
  // check if position selected is a valid grid position
  if( ( ( x_selected >= 0 ) && ( x_selected <= grid[0].length-1 ) ) && ( ( y_selected >=0 )  && ( y_selected <= grid.length - 1 ) ) ) {
@@ -435,10 +444,14 @@ function keyPressed() {
         // console.log( view_index_offset_x );
     }
 
+}
+
+function mouseWheel(){
+
     // selection mode control
     //----------------------------------------------------------------------------------------------------------------
-    // up arrow
-    if ( keyCode === 38 ) {
+    // mouse scroll up
+    if ( event.delta < 0 ) {
         // check array upper bounds,
         if ( ( current_selection_index + 1) <= ( selection_modes.length - 1 ) ) {
             current_selection_index += 1;
@@ -447,10 +460,8 @@ function keyPressed() {
         }
         console.log( current_selection_index );
         document.getElementById( 'selection_mode' ).innerHTML = selection_modes[ current_selection_index ];
-    }
-
-    // down arrow
-    if ( keyCode === 40 ) {
+    // mouse scroll down
+    } else {
         if ( ( current_selection_index - 1) >=  0 ) {
             current_selection_index -= 1;
         } else {
@@ -460,9 +471,8 @@ function keyPressed() {
         document.getElementById( 'selection_mode' ).innerHTML = selection_modes[ current_selection_index ];
 
     }
-
-
-
+    console.log( event.delta);
+    return false;
 }
 
 function update_selection_cells() {
@@ -471,9 +481,30 @@ function update_selection_cells() {
         console.log( 'cell updated');
         // console.log( updateQueue.shift() );
         cell_position = updateQueue.shift();
-        // square( cell_position[0]*cell_size, cell_position[1]*cell_size, cell_size );
-        // grid[ cell_position[0] ][ cell_position[1] ].set_visited = !( grid[ cell_position[0] ][ cell_position[1] ].get_visited );
-        grid[ cell_position[0] ][ cell_position[1] ].set_node_type = node_types[ current_selection_index ];
+
+
+        var current_selected_type = grid[ cell_position[0] ][ cell_position[1] ].get_node_type;
+        if ( selection_modes[ current_selection_index ] == 'select_start_node' ) {
+            if ( start_node == null ) {
+                start_node = [ cell_position[0], cell_position[1] ];
+            } else {
+                grid[ start_node[0] ][ start_node[1] ].set_node_type = null;
+                start_node = [ cell_position[0], cell_position[1] ];
+            }
+            grid[ cell_position[0] ][ cell_position[1] ].set_node_type = node_types[ current_selection_index ];
+        }
+
+        // selecting end node
+        if ( selection_modes[ current_selection_index ] == 'select_end_node' ) {
+            if ( end_node == null ) {
+                end_node = [ cell_position[0], cell_position[1] ];
+            } else {
+                grid[ end_node[0] ][ end_node[1] ].set_node_type = null;
+                end_node = [ cell_position[0], cell_position[1] ];
+            }
+            grid[ cell_position[0] ][ cell_position[1] ].set_node_type = node_types[ current_selection_index ];
+        }
+
     }
     // update changes at end
     draw_grid = true;
